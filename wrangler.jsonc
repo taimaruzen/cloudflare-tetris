@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cloudflare-tetris",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+
+  // フロントエンドは Static Assets で配信し、/api/* だけ Worker で処理する
+  "assets": {
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cloudflare-tetris-db",
+      "database_id": "507b12cf-ddb5-40a3-a6db-ac706f49afad",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Workers Rate Limiting（無料プランで利用可）。namespace_id はアカウント内で一意の整数
+  "ratelimits": [
+    { "name": "RL_READ", "namespace_id": "41001", "simple": { "limit": 120, "period": 60 } },
+    { "name": "RL_WRITE", "namespace_id": "41002", "simple": { "limit": 30, "period": 60 } },
+    { "name": "RL_SIGNUP", "namespace_id": "41003", "simple": { "limit": 5, "period": 60 } }
+  ],
+
+  // 期限切れのゲームセッションを毎日削除
+  "triggers": { "crons": ["17 18 * * *"] },
+
+  "vars": {
+    // Turnstile を使う場合はサイトキーを設定し、シークレットは `wrangler secret put TURNSTILE_SECRET_KEY` で登録する
+    "TURNSTILE_SITE_KEY": ""
+  }
+}

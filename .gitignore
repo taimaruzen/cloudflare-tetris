@@ -1,0 +1,23 @@
+# 依存関係・ビルド成果物
+node_modules/
+dist/
+.wrangler/
+*.tsbuildinfo
+
+# 秘密情報（GitHub に公開しない）
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+!.env.example
+
+# ログ・OS・エディタ
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+coverage/
+test-results/

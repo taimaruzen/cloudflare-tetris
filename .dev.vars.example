@@ -1,0 +1,3 @@
+# ローカル開発用の秘密情報の例。`.dev.vars` にコピーして使う（.dev.vars は Git に含めない）
+# Turnstile を試す場合は、Cloudflare が公開しているテスト用シークレットが使える
+# TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
