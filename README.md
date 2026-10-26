@@ -107,13 +107,17 @@ npm run deploy                                   # ビルド → マイグレー
 
 ### GitHub 連携の自動デプロイ（Workers Builds）
 
-Cloudflare ダッシュボード → **Workers & Pages** → `cloudflare-tetris` → **Settings** → **Builds** → **Connect** で、
-このリポジトリと `main` ブランチを接続します。
+Cloudflare ダッシュボード → **Workers & Pages** → **Create application** → **Import a repository**（GitHub）で
+このリポジトリを選び、次のように設定します（Worker 名は `wrangler.jsonc` の `name` と同じ `cloudflare-tetris` にする必要があります）。
 
+- Project name：`cloudflare-tetris`
 - Build command：`npm run build`
-- Deploy command：`npx wrangler d1 migrations apply DB --remote && npx wrangler deploy`
+- Deploy command：`npx wrangler deploy`
 
 以降は `main` に push するたびに自動でデプロイされます。
+
+D1 のマイグレーションは自動デプロイに含めていません（Workers Builds が自動作成する API トークンには D1 の編集権限がないため）。
+スキーマを変更したときは、手元で `npm run db:migrate:remote` を実行してから push してください。
 
 ### Turnstile を有効にする（任意）
 

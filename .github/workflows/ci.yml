@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   test:
@@ -48,14 +48,3 @@ jobs:
           set -o pipefail
           npx wrangler deploy --dry-run 2>&1 | tee dry.log || { echo "::error title=wrangler::$(tail -c 3500 dry.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
           echo "::notice title=wrangler::$(tail -c 2000 dry.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
-
-      # package-lock.json がリポジトリに無いときだけ、生成したものを main にコミットする
-      - name: Commit lockfile
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          if git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then exit 0; fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json
-          git commit -m "chore: package-lock.json を追加"
-          git push
