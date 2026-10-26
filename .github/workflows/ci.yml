@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -12,15 +13,45 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
+
+      # 各ステップの出力の末尾を注釈（Annotations）にも出して、失敗原因を API から確認しやすくする
       - name: Install
-        run: if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+        run: |
+          set -o pipefail
+          if [ -f package-lock.json ]; then cmd="npm ci"; else cmd="npm install --no-audit --no-fund"; fi
+          $cmd 2>&1 | tee install.log || { echo "::error title=install::$(tail -c 3500 install.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          echo "::notice title=versions::$(npm ls --depth=0 2>/dev/null | sed ':a;N;$!ba;s/\n/%0A/g')"
+
       - name: Typecheck
-        run: npm run typecheck
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee tsc.log || { echo "::error title=typecheck::$(tail -c 3500 tsc.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+
       - name: Test
-        run: npm test
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test.log || { echo "::error title=test::$(grep -E 'not ok|Error|expected|actual' test.log | tail -c 3500 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          echo "::notice title=test::$(grep -E '^# (tests|pass|fail)' test.log | sed ':a;N;$!ba;s/\n/%0A/g')"
+
       - name: Build
-        run: npx vite build
+        run: |
+          set -o pipefail
+          npx vite build 2>&1 | tee build.log || { echo "::error title=build::$(tail -c 3500 build.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          echo "::notice title=build::$(tail -c 1500 build.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
+
+      - name: Wrangler dry run
+        run: |
+          set -o pipefail
+          npx wrangler deploy --dry-run 2>&1 | tee dry.log || { echo "::error title=wrangler::$(tail -c 3500 dry.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"; exit 1; }
+          echo "::notice title=wrangler::$(tail -c 2000 dry.log | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
+
+      - name: Upload lockfile
+        if: hashFiles('package-lock.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-lock
+          path: package-lock.json
