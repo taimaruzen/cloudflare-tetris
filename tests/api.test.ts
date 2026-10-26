@@ -181,7 +181,7 @@ describe('API: ゲーム開始とスコア送信（サーバー側検証）', ()
     const row = db.raw.prepare('SELECT * FROM games WHERE id = ?').get(b.game.id) as Record<string, number>;
     assert.equal(row.score, game.score);
     assert.equal(row.level, game.level);
-    assert.ok(row.duration_ms > 0);
+    assert.ok((row.duration_ms ?? 0) > 0);
   });
 
   it('クライアントが申告したスコアは信用せず、再計算した値を保存する', async () => {
